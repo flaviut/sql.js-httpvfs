@@ -7,6 +7,11 @@ module.exports = {
         use: "ts-loader",
         exclude: /node_modules/,
       },
+      {
+        test: /\.[tj]s$/,
+        enforce: "pre",
+        use: ["source-map-loader"],
+      },
     ],
   },
   resolve: {
@@ -18,4 +23,5 @@ module.exports = {
   devServer: {
     publicPath: "/dist",
   },
+  devtool: 'source-map'
 };

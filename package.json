@@ -5,7 +5,8 @@
   "license": "Apache-2.0",
   "scripts": {
     "dev": "webpack serve --mode=development",
-    "build": "webpack build --mode=production"
+    "build": "webpack build --mode=production",
+    "test": "vitest"
   },
   "dependencies": {
     "comlink": "^4.3.0"
@@ -21,7 +22,8 @@
     "ts-loader": "^8.1.0",
     "ts-node": "^9.1.1",
     "typescript": "^4.3.0-dev.20210331",
-    "webpack": "^5.28.0",
+    "vitest": "^0.34.6",
+    "webpack": "^5.76.0",
     "webpack-bundle-analyzer": "^4.4.1",
     "webpack-cli": "^4.6.0",
     "webpack-dev-server": "^3.11.2"

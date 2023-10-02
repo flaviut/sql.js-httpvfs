@@ -8,11 +8,15 @@ export type RangeMapper = (
   toByte: number
 ) => { url: string; fromByte: number; toByte: number };
 
+export type ResponseMapper = (response: ArrayBuffer, fileRange: {absoluteFrom: number; absoluteTo: number }) => ArrayBuffer;
+
 export type RequestLimiter = (bytes: number) => void;
 
 export type LazyFileConfig = {
   /** function to map a read request to an url with read request  */
   rangeMapper: RangeMapper;
+  /** transforms the response before it's used as a chunk. useful for decompression */
+  responseMapper?: ResponseMapper;
   /** must be known beforehand if there's multiple server chunks (i.e. rangeMapper returns different urls) */
   fileLength?: number;
   /** chunk size for random access requests (should be same as sqlite page size) */
@@ -47,6 +51,7 @@ export class LazyUint8Array {
   private readonly readHeads: ReadHead[] = [];
   private readonly _chunkSize: number;
   private readonly rangeMapper: RangeMapper;
+  private readonly responseMapper: ResponseMapper;
   private readonly maxSpeed: number;
   private readonly maxReadHeads: number;
   private readonly logPageReads: boolean;
@@ -59,6 +64,7 @@ export class LazyUint8Array {
     ); // max 5MiB at once
     this.maxReadHeads = config.maxReadHeads ?? 3;
     this.rangeMapper = config.rangeMapper;
+    this.responseMapper = config.responseMapper ?? (x => x);
     this.logPageReads = config.logPageReads ?? false;
     if (config.fileLength) {
       this._length = config.fileLength;
@@ -271,7 +277,7 @@ export class LazyUint8Array {
     if (!((xhr.status >= 200 && xhr.status < 300) || xhr.status === 304))
       throw new Error("Couldn't load " + url + ". Status: " + xhr.status);
     if (xhr.response !== undefined) {
-      return xhr.response as ArrayBuffer;
+      return this.responseMapper(xhr.response as ArrayBuffer, {absoluteFrom, absoluteTo});
     } else {
       throw Error("xhr did not return uint8array");
     }

@@ -3,6 +3,7 @@
 import * as Comlink from "comlink";
 import initSqlJs from "../sql.js/dist/sql-wasm.js";
 import wasmUrl from "../sql.js/dist/sql-wasm.wasm";
+import { createLazyCompressedFile } from "./compressedFile";
 import { createLazyFile, LazyUint8Array, PageReadLog, RangeMapper } from "./lazyFile";
 import { Database, QueryExecResult } from "sql.js";
 import { SeriesVtab, sqlite3_module, SqljsEmscriptenModuleType } from "./vtab";
@@ -60,6 +61,7 @@ export type SplitFileConfigPure = {
 export type SplitFileConfigInner = {
   requestChunkSize: number;
   cacheBust?: string;
+  compression?: 'none' | 'zstdparts';
 } & (
   | {
       serverMode: "chunked";
@@ -130,7 +132,10 @@ const mod = {
   sqljs: null as null | Promise<any>,
   bytesRead: 0,
   async SplitFileHttpDatabase(
-    wasmUrl: string,
+    urls: {
+      sqliteWasm: string,
+      zstdWasm: string,
+    },
     configs: SplitFileConfig[],
     mainVirtualFilename?: string,
     maxBytesToRead: number = Infinity,
@@ -138,7 +143,7 @@ const mod = {
     if (this.inited) throw Error(`sorry, only one db is supported right now`);
     this.inited = true;
     if (!this.sqljs) {
-      this.sqljs = init(wasmUrl);
+      this.sqljs = init(urls.sqliteWasm);
     }
     const sql = await this.sqljs;
 
@@ -191,7 +196,12 @@ const mod = {
       }
       console.log("filename", filename);
       console.log("constructing url database", id, "filename", filename);
-      const lazyFile = createLazyFile(sql.FS, "/", filename, true, true, {
+
+      if (config.compression !== 'zstdparts' && config.compression !== 'none' && config.compression !== undefined) {
+        throw Error(`unknown compression ${config.compression}`)
+      }
+      const builder = config.compression === 'zstdparts' ? createLazyCompressedFile : createLazyFile;
+      const lazyFile = await builder(sql.FS, "/", filename, true, true, {
         rangeMapper,
         requestChunkSize: config.requestChunkSize,
         fileLength:
@@ -200,7 +210,8 @@ const mod = {
             : undefined,
         logPageReads: true,
         maxReadHeads: 3,
-        requestLimiter
+        requestLimiter,
+        zstdWasmUrl: urls.zstdWasm,
       });
       lazyFiles.set(filename, lazyFile);
     }

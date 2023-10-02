@@ -31,15 +31,18 @@ export interface WorkerHttpvfs {
 }
 export async function createDbWorker(
   configs: SplitFileConfig[],
-  workerUrl: string,
-  wasmUrl: string,
+  urls: {
+    worker: string,
+    sqliteWasm: string,
+    zstdWasm: string,
+  },
   maxBytesToRead: number = Infinity
 ): Promise<WorkerHttpvfs> {
-  const worker: Worker = new Worker(workerUrl);
+  const worker: Worker = new Worker(urls.worker);
   const sqlite = Comlink.wrap<SqliteComlinkMod>(worker);
 
   const db = ((await sqlite.SplitFileHttpDatabase(
-    wasmUrl,
+    urls,
     configs,
     undefined,
     maxBytesToRead

@@ -1,11 +1,5 @@
 import { createDbWorker } from "sql.js-httpvfs";
 
-const workerUrl = new URL(
-  "sql.js-httpvfs/dist/sqlite.worker.js",
-  import.meta.url
-);
-const wasmUrl = new URL("sql.js-httpvfs/dist/sql-wasm.wasm", import.meta.url);
-
 async function load() {
   const worker = await createDbWorker(
     [
@@ -13,16 +7,20 @@ async function load() {
         from: "inline",
         config: {
           serverMode: "full",
-          url: "/example.sqlite3",
-          requestChunkSize: 4096,
+          url: "/test.db",
+          requestChunkSize: 8192,
+          compression: 'zstdparts',
         },
       },
     ],
-    workerUrl.toString(),
-    wasmUrl.toString()
+    {
+      worker: new URL("sql.js-httpvfs/dist/sqlite.worker.js", import.meta.url).toString(),
+      sqliteWasm: new URL("sql.js-httpvfs/dist/sql-wasm.wasm", import.meta.url).toString(),
+      zstdWasm: new URL("sql.js-httpvfs/dist/zstd_decompress.wasm", import.meta.url).toString(),
+    }
   );
 
-  const result = await worker.db.query(`select * from mytable`);
+  const result = await worker.db.query(`select * from stocks`);
 
   document.body.textContent = JSON.stringify(result);
 }

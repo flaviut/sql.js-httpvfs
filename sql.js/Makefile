@@ -1,4 +1,4 @@
-# Note: Last built with version 1.38.30 of Emscripten
+# Note: Last built with version 3.1.44 of Emscripten
 
 # TODO: Emit a file showing which version of emcc and SQLite was used to compile the emitted output.
 # TODO: Create a release on Github with these compiled assets rather than checking them in
@@ -6,9 +6,9 @@
 
 # I got this handy makefile syntax from : https://github.com/mandel59/sqlite-wasm (MIT License) Credited in LICENSE
 # To use another version of Sqlite, visit https://www.sqlite.org/download.html and copy the appropriate values here:
-SQLITE_AMALGAMATION = sqlite-amalgamation-3350000
-SQLITE_AMALGAMATION_ZIP_URL = https://www.sqlite.org/2021/sqlite-amalgamation-3350000.zip
-SQLITE_AMALGAMATION_ZIP_SHA1 = ba64bad885c9f51df765a9624700747e7bf21b79
+SQLITE_AMALGAMATION = sqlite-amalgamation-3430100
+SQLITE_AMALGAMATION_ZIP_URL = https://www.sqlite.org/2023/sqlite-amalgamation-3430100.zip
+SQLITE_AMALGAMATION_ZIP_SHA1 = faf6e271796b1292cdfa79457adf4d1843fcba26
 
 # Note that extension-functions.c hasn't been updated since 2010-02-06, so likely doesn't need to be updated
 EXTENSION_FUNCTIONS = extension-functions.c
@@ -17,7 +17,8 @@ EXTENSION_FUNCTIONS_SHA1 = c68fa706d6d9ff98608044c00212473f9c14892f
 
 EMCC=emcc
 
-CFLAGS = \
+SQLITE_COMPILATION_FLAGS = \
+    -flto \
 	-O2 \
 	-DSQLITE_OMIT_LOAD_EXTENSION \
 	-DSQLITE_DISABLE_LFS \
@@ -36,7 +37,7 @@ EMFLAGS = \
 	-s RESERVED_FUNCTION_POINTERS=64 \
 	-s ALLOW_TABLE_GROWTH=1 \
 	-s EXPORTED_FUNCTIONS=@src/exported_functions.json \
-	-s EXTRA_EXPORTED_RUNTIME_METHODS=@src/exported_runtime_methods.json \
+	-s EXPORTED_RUNTIME_METHODS=@src/exported_runtime_methods.json \
 	-s SINGLE_FILE=0 \
 	-s NODEJS_CATCH_EXIT=0 \
 	-s NODEJS_CATCH_REJECTION=0 \
@@ -152,13 +153,13 @@ dist/worker.sql-wasm-debug.js: dist/sql-wasm-debug.js src/worker.js
 out/sqlite3.bc: sqlite-src/$(SQLITE_AMALGAMATION)
 	mkdir -p out
 	# Generate llvm bitcode
-	$(EMCC) $(CFLAGS) -c sqlite-src/$(SQLITE_AMALGAMATION)/sqlite3.c -o $@
+	$(EMCC) $(SQLITE_COMPILATION_FLAGS) -c sqlite-src/$(SQLITE_AMALGAMATION)/sqlite3.c -o $@
 
 # Since the extension-functions.c includes other headers in the sqlite_amalgamation, we declare that this depends on more than just extension-functions.c
 out/extension-functions.bc: sqlite-src/$(SQLITE_AMALGAMATION)
 	mkdir -p out
 	# Generate llvm bitcode
-	$(EMCC) $(CFLAGS) -s LINKABLE=1 -c sqlite-src/$(SQLITE_AMALGAMATION)/extension-functions.c -o $@
+	$(EMCC) $(SQLITE_COMPILATION_FLAGS) -c sqlite-src/$(SQLITE_AMALGAMATION)/extension-functions.c -o $@
 
 # TODO: This target appears to be unused. If we re-instatate it, we'll need to add more files inside of the JS folder
 # module.tar.gz: test package.json AUTHORS README.md dist/sql-asm.js

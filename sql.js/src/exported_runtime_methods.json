@@ -9,5 +9,8 @@
 "ccall",
 "setValue",
 "getValue",
-"addFunction"
+"addFunction",
+"allocate",
+"allocateUTF8OnStack",
+"removeFunction"
 ]

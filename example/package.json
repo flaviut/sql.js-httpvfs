@@ -1,12 +1,17 @@
 {
+  "scripts": {
+    "build": "webpack --mode=development",
+    "start": "http-server"
+  },
   "dependencies": {
-    "sql.js-httpvfs": "^0.8.8"
+    "sql.js-httpvfs": "link:./../"
   },
   "devDependencies": {
-    "http-server": "^0.12.3",
-    "ts-loader": "^9.1.2",
-    "typescript": "^4.2.4",
-    "webpack": "^5.36.2",
-    "webpack-cli": "^4.7.0"
+    "http-server": "^14.x",
+    "source-map-loader": "^4.0.1",
+    "ts-loader": "^9.x",
+    "typescript": "^4.x",
+    "webpack": "^5.x",
+    "webpack-cli": "^4.x"
   }
 }
